@@ -1,0 +1,96 @@
+<!-- start of 2banner.html -->
+
+<!-- get someone to make this less horrible-looking -->
+<div id="the2Banner" style="background: orange; font-size: 18pt; foreground-color: black;">(loading...)</div>
+
+<!-- this is for for debugging. Set "visibility: visible" to display it  -->
+<div id="2bd" style="visibility: hidden; background: white; font-size: 18pt; foreground-color: black;">(diagnostics)</div>
+
+
+<script type="text/javascript">
+
+/* Items in the user_list contain three attributes:
+ *   user_name
+ *   user_id
+ *   arrival_time
+ * 
+ * This list is constructed in DBAPI::whos_visiting().
+ * user_name and user_id are passed directly from the database.
+ * arrival time is in ISO860 format, "2014-02-28T13:49:51" for example.
+ */
+function b2_banner_text (user_list) {
+    var n = user_list.length;
+    if (n == 0) { return "" }  // should never happen
+    else if (n == 1) { return user_list[0].user_name + " is also looking at this page" }
+    else if (n == 2) { return user_list[0].user_name + " and " + user_list[1].user_name +
+                                " are also looking at this page" }
+    else {
+        var text = "";
+        for (var i=0; i < n-1; i++) {
+            text = text + user_list[i].user_name + ", ";
+        }
+        return text + " and " + user_list[n-1].user_name + " are also looking at this page";
+    }
+}
+
+function b2_show2Banner (text) {
+    $('#the2Banner').html(text);
+    $('#the2Banner').show();
+}
+
+function b2_hide2Banner (text) {
+    $('#the2Banner').hide();
+}
+
+function b2_arrive () {
+    // refresh the 2banner every this many milliseconds
+    var default_update_interval = 5000;
+    // probably 30s or 60s is enough for everyday use, but I set it
+    // to 5s for now so that testing and demos would be easier.
+    // Adjust this time once the software is installed.
+
+    $('#2bd').html("running arrive");
+    b2_check_loop(default_update_interval);
+}
+
+function b2_check_loop (interval) {
+    $('#2bd').html("b2_check_loop posting ajax; interval=" + interval);
+    jQuery.ajax({ url: '/visit-tracker/arrive',
+                  type: 'POST',
+                  data: JSON.stringify({ page_path: $(document).context.baseURI }),
+                  contentType: 'application/json',
+                  dataType: "json",
+                  success: function (data, textStatus) {
+                      $('#2bd').html("ajax success; data = " + data);
+                      if (data.length == 0) {
+                          b2_hide2Banner();
+                      } else {
+                          b2_show2Banner(b2_banner_text(data));
+                      }
+                  },
+                  complete: function () {
+                      $('#2bd').html("ajax complete");
+                      var timeoutId = setTimeout(function () {
+                          b2_check_loop(interval)
+                      }, interval);
+                      $('#the2banner')["timeoutId"] = timeoutId;
+                  }
+                })
+}
+
+function b2_depart () {
+    clearTimeout($('#the2banner').timeoutId);
+    jQuery.ajax({ url: '/visit-tracker/depart',
+                  type: 'POST',
+                  data: JSON.stringify({ page_path: $(document).context.baseURI }),
+                  contentType: 'application/json',
+                  dataType: "json",
+                })
+}
+
+$(document).on('ready', b2_hide2Banner);
+$(window).on('load', b2_arrive);
+$(window).on('unload', b2_depart);
+</script>
+
+<!-- end of 2banner.html -->
