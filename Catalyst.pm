@@ -128,6 +128,7 @@ sub content :Private {
     # in which case $rbody is a filehandle pointing to the temporary file
     if (ref $rbody) {           # a filehandle
       $content = join "", readline($c->req->body);
+      unlink $rbody;            # as a string, it names the file
     } else {                    # a string
       $content = $rbody;
     }
