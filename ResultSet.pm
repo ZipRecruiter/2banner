@@ -78,18 +78,16 @@ sub whos_visiting {
 }
 
 # Expire old records for a user
-# You probably want to call this like this:
-#  ->model("CurrentlyVisiting")->search({ user_id => ... })->expire_old(...)
 sub expire_old {
   my ($self, $arg) = @_;
-  my $my_recs = $self->my_recs($arg->{user_id});
 
   if ($arg->{ip_address}) {
-    $my_recs
+    $self->my_recs($arg->{user_id})
       ->search({ ip_address  => { '<>', $arg->{ip_address} }})
       ->delete;
   }
 
+  # Delete all old records, not just mine
   $self->search({ arrival_time => { '<', $self->oldest }})->delete;
 }
 
