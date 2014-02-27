@@ -12,8 +12,6 @@ create table currently_visiting (
     ip_address            varchar(39)   not null,
 
     -- foreign key (user_id)      references user (user_id),
-) engine = innodb;
-
 
     primary key (currently_visiting_id)
 
